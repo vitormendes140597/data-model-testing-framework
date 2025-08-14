@@ -1,0 +1,102 @@
+# Data Model Testing Framework
+
+A lightweight Python framework to validate data transformations by comparing the result of a query against expected output.
+It uses an adapter pattern to support multiple processing engines; a PySpark adapter is included out of the box.
+
+# Features
+* **Backend‑agnostic design** – implement new adapters for any processing engine.
+* **PySpark integration** – load datasets, execute SQL, and convert results to pandas for assertions.
+* **File abstractions** – LocalFile and SQLFile wrap paths and options for CSV/JSON inputs and templated SQL scripts.
+* **Declarative tests** – specify input files, expected output, parameters, and SQL in a single TestModelSQL object.
+* **Reusable runner** – TestExecution.test_model executes the transformation and validates the result with pandas.testing.assert_frame_equal.
+
+# Requirements
+
+* Python 3.8+
+* PySpark
+* pandas
+* Jinja2
+* pytest (for running tests)
+
+Install dependencies with pip:
+
+```bash
+pip install pyspark pandas jinja2 pytest
+```
+
+# Project Layout
+
+```bash
+src/model_test/
+├── adapters/
+│   ├── adapter.py        # BackendAdapter base class
+│   └── spark_adapter.py  # PySpark implementation
+├── core/
+│   ├── files.py          # LocalFile & SQLFile abstractions
+│   ├── specs.py          # TestModel, TestModelSQL, TestExecution
+│   └── utils.py          # Helper decorator
+└── main.py               # Example usage
+tests/                    # Pytest suite
+```
+
+# Usage example
+
+```python
+from pyspark.sql import SparkSession
+from model_test.adapters import SparkAdapter
+from model_test.core import LocalFile, SQLFile, TestModelSQL, TestExecution
+
+spark = SparkSession.builder.master("local[*]").getOrCreate()
+adapter = SparkAdapter(spark)
+
+test_csv     = LocalFile("test.csv")
+expected_csv = LocalFile("test2.csv")
+sql_file     = SQLFile("teste.sql")
+
+test = TestModelSQL(
+    inputs={"dataset1": test_csv},
+    expected=expected_csv,
+    backend=adapter,
+    load_params={"inferSchema": True, "header": True},
+    run_params={"my_model": "dataset1"},
+    sql=sql_file
+)
+
+TestExecution.test_model(test)
+
+```
+
+* **Prepare files** – place input datasets (test.csv), expected output (test2.csv), and a SQL template (teste.sql) in your project.
+* **Build the test** – define TestModelSQL with file mappings, backend, and parameters.
+* **Execute** – TestExecution.test_model loads inputs, runs the templated SQL, and asserts that the result matches the expected DataFrame.
+
+# Running the Test Suite
+
+```bash
+pytest
+```
+
+The included tests rely on the local PySpark session fixture (tests/conftest.py).
+Adjust file paths or add new tests to match your environment.
+
+# Extending
+
+Create a new adapter by subclassing BackendAdapter and implementing:
+
+* read_csv
+* read_json
+* execute_sql
+* to_pandas
+
+Use the new adapter in TestModelSQL to run tests on another processing engine (e.g., Dask, Polars, DuckDB, BigQuery).
+
+# Contributing
+
+1. Fork the repository and create a feature branch.
+2. Add or update tests for your changes.
+3. Ensure code style and linting checks pass.
+4. Submit a pull request with a detailed description.
+
+# License
+No license file is currently provided.
+Add a suitable license (e.g., MIT, Apache 2.0) before distributing the project.
