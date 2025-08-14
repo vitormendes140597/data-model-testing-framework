@@ -1,0 +1,5 @@
+vehicle_name_local_tms,fuel_type,gvwr_kg,load_capacity_kg,consumption_factor_from_country_litres_km,_is_current
+CARRY,DIESEL,5000,2000,,true
+MMUL,DIESEL,6000,4500,,true
+NHR,PETROL,12000,8000,"0,3367 Kg / Km",true
+SENC,DIESEL,32000,16000,"0,02439 L/Km",true
